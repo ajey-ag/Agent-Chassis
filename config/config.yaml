@@ -12,7 +12,7 @@ router:
     - cerebras      # 1M tokens/day BUT ~5 RPM / 30K TPM, 8K context cap -> batch tier
     - openrouter    # 20 RPM, 50 req/day (1000/day after one-time $10 credit purchase)
     - ollama_cloud  # unpublished 5h-session + weekly GPU-time caps; last resort
-    # - ollama_local  # offline emergency tier only; uncomment if Ollama is installed
+    - ollama_local  # offline emergency tier (Ollama 0.31 installed, qwen2.5:3b pulled)
 
   circuit_breaker:
     failure_threshold: 3      # consecutive failures before a provider is skipped
@@ -48,7 +48,7 @@ providers:
   ollama_local:
     kind: openai_compat
     api_key_env: ""              # no key needed
-    model: llama3.2:3b           # <=3B quantized only on this hardware (8GB RAM, no dGPU)
+    model: qwen2.5:3b            # <=3B quantized only on this hardware (8GB RAM, no dGPU)
     base_url: http://localhost:11434/v1
 
 agent:

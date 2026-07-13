@@ -9,7 +9,7 @@
 4. Then the code (start at `chassis/agent/loop.py`, it's the spine)
 
 ## Current State (one paragraph)
-v1 chassis is complete and tested (19 passing tests, no API keys required for the suite): config-driven multi-provider LLM router with per-provider circuit breakers, ToolRegistry with docstring→JSON-Schema introspection and 3-tier permissions, raw ReAct loop with structured recovery, tier-3 approval queue (append-only JSONL, restart-safe), MCP server exposing tier-1/2 tools, FastAPI dashboard (login, task submit, live websocket trace, run history, approval queue, settings) as a PWA, Docker/Render config. **Not yet done with real keys**: no `.env` exists, so no live provider call has been made; Docker is unavailable on this machine so the image is unbuilt.
+v1 chassis is complete, tested (19 passing tests, suite needs no keys) and **live-validated**: `.env` exists with working Gemini + Groq keys (found in the user's other projects) and local Ollama (qwen2.5:3b) as the offline tier; a real 4-iteration agent run, the full tier-3 queue→approve→execute cycle (including the fresh-process default_executor path), and a forced Gemini-401→Groq failover have all been exercised against live APIs — real numbers in PROJECT_LOG "Benchmarks". Dashboard password is in `data/dashboard-password.txt` (gitignored). Still open: Cerebras/OpenRouter/Ollama-Cloud keys (human-only signups) and the Docker image (no Docker on this machine).
 
 ## What NOT To Do
 - **Don't add LangChain/LangGraph** — the raw loop is deliberate (DECISIONS.md DEC-001). Adding a framework is a flagged, explicit step.
@@ -38,13 +38,13 @@ python -m uvicorn server.app:app --reload   # dashboard at http://localhost:8000
 ```
 
 ## Active Task / Next Steps
-1. Human: create `.env` with at least `GEMINI_API_KEY`, run one real task end-to-end, paste real latency/token numbers into PROJECT_LOG "Performance Numbers".
-2. First task-specific mode on top of the chassis (user will specify) — keep it in a new module, core stays task-agnostic.
+1. First task-specific mode on top of the chassis (user will specify) — keep it in a new module, core stays task-agnostic.
+2. Optional hardening: Cerebras/OpenRouter/Ollama-Cloud keys (human signup), docker build elsewhere.
 
 ## Open Questions Blocking Progress
-- [ ] Which API keys does the user actually have? — user
 - [ ] Spend $10 once on OpenRouter to lift 50→1000 req/day? — user
 - [ ] Cloud deploy at all, given Render free tier loses disk state? (local-only is viable) — user
+- [ ] The Gemini/Groq keys were reused from Study-prep — fine to keep sharing, or mint dedicated keys for quota isolation? — user
 
 ## Contact / Escalation
 Stop and ask the human before: anything touching auth/session logic, deployment config, API keys, lowering any tool tier, adding a new tier-3-capable tool, or any change that lets a tool escape the sandbox.

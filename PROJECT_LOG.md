@@ -4,8 +4,8 @@
 
 ## Project Overview
 - **Goal**: A reusable, general-purpose AI agent automation chassis: multi-provider free-tier LLM routing, tiered-autonomy tool execution (safe unattended operation), web dashboard control, MCP interop. Task-specific automations get built ON this later; the core stays task-agnostic.
-- **Current Phase**: v1 complete (all 10 build-order steps done in code; live-key validation pending)
-- **Status**: 🟡 green code / yellow ops — 19/19 tests pass with mocked LLMs; no real API key has been exercised yet because no `.env` exists on this machine, and Docker isn't installed locally.
+- **Current Phase**: v1 complete and **live-validated** (2026-07-13, second session)
+- **Status**: 🟢 — 19/19 tests pass; 3 providers verified live (Gemini, Groq, local Ollama qwen2.5:3b); full agent run + tier-3 approval cycle + forced-fallback all exercised against real APIs. Docker image still unbuilt (no Docker on this machine); Cerebras/OpenRouter/Ollama-Cloud keys not yet created (need account signups only the human can do).
 
 ## Architecture
 ```
@@ -82,8 +82,12 @@ Chassis itself is stateless per run; persistence = the three JSONL logs. No vect
 ## Evaluation Metrics
 For now: test suite + per-run structured events (provider, latency, tokens, fallbacks, tier actions). No benchmark harness yet.
 
-## Benchmarks
-None with real providers yet (no keys on machine). Mocked E2E run: ~10 ms/iteration overhead excluding LLM latency.
+## Benchmarks (live, 2026-07-13, this machine)
+- Gemini 2.5 Flash: 1.1–2.5 s/call, tool-calling solid across a real 4-iteration run
+- Groq llama-3.3-70b: 0.19–0.6 s/call — confirms its "latency-sensitive" slot in the chain
+- Local qwen2.5:3b via Ollama: ~32 s cold-load first call — emergency tier only, as expected on 8GB/iGPU
+- Real 4-iteration agent run (search → write → tier-3 queue → answer): ~13 s wall, ~$0.0015 cost-equivalent, 4.7K total tokens
+- Forced Gemini 401 → Groq failover added ~200 ms total (no retry-wait, by design)
 
 ## Known Bugs
 - [x] ~~#1 Approvals pending across a server restart can't execute~~ — fixed same session: `ApprovalQueue` takes a `default_executor` (the deterministic default registry) used when the run-scoped executor is gone; covered by `test_approval_survives_restart_via_default_executor`.
@@ -91,9 +95,9 @@ None with real providers yet (no keys on machine). Mocked E2E run: ~10 ms/iterat
 - [ ] #3 `run_agent.py` CLI + dashboard simultaneously = two processes, separate approval queues in memory (same file, no cross-process reload). Use one or the other per session. — low
 
 ## Upcoming Tasks
-- [ ] Live validation with real GEMINI_API_KEY (human provides key)
 - [ ] First task-specific mode on top of the chassis (user to specify)
-- [ ] Optional: prompt-template versioning, JSONL compaction, LangGraph spike
+- [ ] Optional: create Cerebras / OpenRouter / Ollama-Cloud accounts+keys to complete the chain (human-only: OAuth/email signup)
+- [ ] Optional: prompt-template versioning, JSONL compaction, LangGraph spike, docker build on a machine with Docker
 
 ## Completed Tasks
 - [x] Steps 1–10 of the build order: scaffold+docs+config, router+breakers, registry+tiers, ReAct loop, MCP wrapper, FastAPI+websocket, dashboard+approval queue, auth+Docker+render.yaml, E2E test incl. tier-3 approval blocking (test_approval_flow.py, test_server_smoke.py), docs finalized — all 2026-07-13
@@ -133,7 +137,9 @@ Local: `docker-compose up` (data/ + sandbox/ volume-mounted). Cloud: push repo t
 - [x] `python -m pytest -q` — 19 passed (registry schema-gen, circuit-breaker transitions, router fallback/skip, tier-1 exec vs tier-3 queue, approve-executes, deny-blocks, restart-survival, hallucinated-tool recovery, max-iteration cap, auth roundtrips, default-tier-3, full HTTP flow)
 - [x] `python -c "import chassis.mcp_server; ...build_server()"` — OK
 - [x] uvicorn boots, /healthz 200, dashboard serves
-- [ ] Live run with real key
+- [x] Live run with real keys: 4-iteration run on Gemini; tier-1 search ran, tier-2 write landed in sandbox, tier-3 shell_exec queued (NOT executed), approval from a fresh process executed it via default_executor (restart path proven live)
+- [x] Live fallback: invalid Gemini key → 401 → Groq success in 194 ms
+- [x] Providers verified individually: gemini OK, groq OK, ollama_local (qwen2.5:3b) OK
 - [ ] docker build (no Docker on this machine)
 
 ---

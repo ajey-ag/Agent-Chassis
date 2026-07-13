@@ -38,8 +38,9 @@ async def main() -> None:
     print("=" * 60)
     print(run.final_answer)
     if run.pending_approvals:
-        print(f"\n⏳ {len(run.pending_approvals)} action(s) queued for approval "
-              f"— start the dashboard to approve: uvicorn server.app:app")
+        # ASCII only: Windows consoles default to cp1252 and choke on emoji.
+        print(f"\n[PENDING] {len(run.pending_approvals)} action(s) queued for approval "
+              f"- start the dashboard to approve: uvicorn server.app:app")
 
 
 if __name__ == "__main__":
