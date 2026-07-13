@@ -1,0 +1,29 @@
+# Render Blueprint. Free tier caveat (verified 2026-07-13): free web services
+# spin down after 15 min of inactivity -> 30-60s cold start on next request,
+# and the in-memory run index resets (JSONL files on disk are ALSO lost on
+# free tier, which has no persistent disk). Fine for a phone-accessible
+# dashboard; NOT fine for overnight unattended runs -- run those locally via
+# docker-compose, or pay for Starter ($7/mo) + a persistent disk.
+# Railway alternative: no permanent free tier anymore ($5 one-time trial,
+# then $5/mo Hobby) but no sleeping. See DECISIONS.md DEC-006.
+services:
+  - type: web
+    name: agent-chassis
+    runtime: docker
+    plan: free
+    healthCheckPath: /healthz
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CEREBRAS_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: OLLAMA_API_KEY
+        sync: false
+      - key: DASHBOARD_PASSWORD_HASH
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true

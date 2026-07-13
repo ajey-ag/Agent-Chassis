@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f1117">
+<title>Agent Chassis</title>
+<link rel="manifest" href="/static/manifest.json">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="login" class="screen">
+  <div class="card login-card">
+    <h1>Agent Chassis</h1>
+    <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+    <button id="loginBtn">Sign in</button>
+    <p id="loginErr" class="err"></p>
+  </div>
+</div>
+
+<div id="main" class="screen hidden">
+  <header>
+    <h1>Agent Chassis</h1>
+    <span id="wsStatus" class="pill">connecting…</span>
+    <nav>
+      <button data-tab="task" class="active">New Task</button>
+      <button data-tab="trace">Live Trace</button>
+      <button data-tab="runs">Runs</button>
+      <button data-tab="approvals">Approvals <span id="apCount" class="badge hidden"></span></button>
+      <button data-tab="settings">Settings</button>
+    </nav>
+  </header>
+
+  <section id="tab-task" class="tab">
+    <div class="card">
+      <textarea id="taskInput" rows="4" placeholder="Describe the task…"></textarea>
+      <button id="submitTask">Run</button>
+      <p id="taskMsg"></p>
+    </div>
+  </section>
+
+  <section id="tab-trace" class="tab hidden">
+    <div class="card"><div id="trace" class="trace"></div></div>
+  </section>
+
+  <section id="tab-runs" class="tab hidden">
+    <div class="card"><div id="runs"></div></div>
+  </section>
+
+  <section id="tab-approvals" class="tab hidden">
+    <div class="card"><div id="approvals"></div></div>
+  </section>
+
+  <section id="tab-settings" class="tab hidden">
+    <div class="card">
+      <h2>Provider fallback order</h2>
+      <p class="muted">Drag not supported — edit the comma-separated order and save.</p>
+      <input id="orderInput" type="text">
+      <h2>Provider health</h2>
+      <div id="providers"></div>
+      <h2>Tool permission tiers</h2>
+      <div id="tiers"></div>
+      <button id="saveSettings">Save settings</button>
+      <p id="settingsMsg"></p>
+    </div>
+  </section>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

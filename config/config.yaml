@@ -1,0 +1,74 @@
+# Agent Chassis configuration.
+# Everything here is editable without code changes. Env vars referenced as ${VAR}.
+#
+# Free-tier numbers below were verified 2026-07-13 via live docs/search.
+# They go stale within weeks -- re-verify before relying on them.
+
+router:
+  # Fallback order. First healthy provider wins. Remove/reorder freely.
+  fallback_order:
+    - gemini        # ~10-15 RPM / 250K TPM / ~1500 req/day (Flash, resets midnight PT)
+    - groq          # ~30 RPM but only ~6-12K TPM, ~1K req/day -> short latency-sensitive calls
+    - cerebras      # 1M tokens/day BUT ~5 RPM / 30K TPM, 8K context cap -> batch tier
+    - openrouter    # 20 RPM, 50 req/day (1000/day after one-time $10 credit purchase)
+    - ollama_cloud  # unpublished 5h-session + weekly GPU-time caps; last resort
+    # - ollama_local  # offline emergency tier only; uncomment if Ollama is installed
+
+  circuit_breaker:
+    failure_threshold: 3      # consecutive failures before a provider is skipped
+    cooldown_seconds: 120     # how long to skip it before a half-open retry
+
+providers:
+  gemini:
+    kind: gemini                 # native Gemini API adapter
+    api_key_env: GEMINI_API_KEY
+    model: gemini-2.5-flash
+    base_url: https://generativelanguage.googleapis.com/v1beta
+  groq:
+    kind: openai_compat
+    api_key_env: GROQ_API_KEY
+    model: llama-3.3-70b-versatile
+    base_url: https://api.groq.com/openai/v1
+  cerebras:
+    kind: openai_compat
+    api_key_env: CEREBRAS_API_KEY
+    model: gpt-oss-120b          # one of the two models still on the free tier (2026-06 docs)
+    base_url: https://api.cerebras.ai/v1
+    max_context_tokens: 8192     # free tier context cap -- router warns if exceeded
+  openrouter:
+    kind: openai_compat
+    api_key_env: OPENROUTER_API_KEY
+    model: meta-llama/llama-3.3-70b-instruct:free
+    base_url: https://openrouter.ai/api/v1
+  ollama_cloud:
+    kind: openai_compat
+    api_key_env: OLLAMA_API_KEY
+    model: gpt-oss:20b           # level-1 model to stretch the GPU-time quota
+    base_url: https://ollama.com/v1
+  ollama_local:
+    kind: openai_compat
+    api_key_env: ""              # no key needed
+    model: llama3.2:3b           # <=3B quantized only on this hardware (8GB RAM, no dGPU)
+    base_url: http://localhost:11434/v1
+
+agent:
+  max_iterations: 15
+  system_prompt_extra: ""        # appended to the built-in ReAct system prompt
+
+# Permission tiers per tool.
+#   1 = auto-run (read-only / reversible)
+#   2 = auto-run but logged prominently (low-blast-radius writes)
+#   3 = queued for human approval (irreversible / external-facing)
+# Any tool NOT listed here defaults to tier 3 (most conservative).
+tool_tiers:
+  web_search: 1
+  read_file: 1
+  http_get: 1
+  write_file: 2        # confined to the sandbox/ output directory by the tool itself
+  shell_exec: 3        # arbitrary shell = irreversible potential; downgrade deliberately
+  http_request: 3      # non-GET requests can mutate external state
+  send_email: 3        # example placeholder -- any future "send" tool stays tier 3
+
+paths:
+  sandbox_dir: sandbox           # write_file is jailed to this directory
+  data_dir: data                 # structured logs, run history, approval queue
